@@ -1,3 +1,5 @@
+use std::ops::Sub;
+
 pub fn n_gram(candidate_fragments: &[String], reference_fragments: &[String], n: usize) -> Vec<usize> {
     n_gram_base(
         candidate_fragments,
@@ -18,7 +20,7 @@ pub fn modified_n_gram(candidate_fragments: &[String], reference_fragments: &[St
 
 pub fn n_gram_base(candidate_fragments: &[String], reference_fragments: &[String], n: usize, matcher: &dyn Fn(&[String], &[String], &[usize]) -> Vec<usize>) -> Vec<usize> {
     let mut matches = vec![];
-    for from_idx in 0..candidate_fragments.len()-n+1 {
+    for from_idx in 0..(candidate_fragments.len()+1).saturating_sub(n) {
         let candidate = &candidate_fragments[from_idx..from_idx+n];
         let mut matched = matcher(candidate, reference_fragments, &matches);
         // println!("{:?}_h{:?}", candidate, matched);
@@ -29,7 +31,7 @@ pub fn n_gram_base(candidate_fragments: &[String], reference_fragments: &[String
 
 fn check_fragment(candidate: &[String], reference_fragments: &[String], skip: Option<&[usize]>) -> Vec<usize> {
     let mut matches = vec![];
-    for from_idx in 0..reference_fragments.len()-candidate.len()+1 {
+    for from_idx in 0..(reference_fragments.len()+1).saturating_sub(candidate.len()) {
         if let Some(skipped_idx) = skip {
             if skipped_idx.contains(&from_idx) {
                 continue;
@@ -44,7 +46,7 @@ fn check_fragment(candidate: &[String], reference_fragments: &[String], skip: Op
     matches
 }
 
-fn fragments(input: &str) -> Vec<String>{
+pub fn fragments(input: &str) -> Vec<String>{
     input.split(' ').into_iter().map(|f| f.to_string().to_lowercase()).collect()
 }
 
@@ -62,7 +64,7 @@ fn brevity_penalty(candidate_fragments: &[String], reference_fragments: &[String
     }
 }
 
-fn bleu_metric(candidate_fragments: &[String], reference_fragments: &[String], n: usize) -> f32 {
+pub fn bleu_metric(candidate_fragments: &[String], reference_fragments: &[String], n: usize) -> f32 {
     let sum = (1..n+1).into_iter().map(|v| {
         let w_n = 1. / n as f32;
         let p_n = percision(candidate_fragments, reference_fragments, v);
@@ -78,6 +80,15 @@ fn test_percision(){
     let reference = fragments("The cat is on the mat");
     let p = percision(&cand, &reference, 1);
     println!("2/7 ~ {} = {}", 2./7., p);
+}
+
+#[test]
+fn test_chinese(){
+    let canditate: Vec<String> = "继续全天候保护兰娜蒂 明天一早我们再谈".chars().into_iter().map(|c| c.to_string()).collect();
+    let reference: Vec<String> = "我们将每天向我们发言,保护耐心。".chars().into_iter().map(|c| c.to_string()).collect();
+    // let p = percision(&canditate, &reference, 1);
+    let p = modified_n_gram(&canditate, &reference, 1);
+    println!("{:?}", p);
 }
 
 #[test]

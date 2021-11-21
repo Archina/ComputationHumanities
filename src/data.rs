@@ -62,7 +62,7 @@ pub struct DataSet{
     pub sentences: Vec<Sentence>,
 }
 
-pub fn read_user_from_file<P: AsRef<Path>>(path: P) -> Option<DataSet> {
+pub fn read_data_set_from_file<P: AsRef<Path>>(path: P) -> Option<DataSet> {
     File::open(path)
         .ok()
         .map(|file| BufReader::new(file))
